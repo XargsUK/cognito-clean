@@ -16,10 +16,10 @@ s3_key = os.getenv('S3_KEY', '')
 sns_topic_arn = os.getenv('SNS_TOPIC_ARN', '')
 
 # Threshold in minutes to determine the age of users to be considered for deletion
-aged_user_threshold_minutes = os.getenv('AGED_USER_THRESHOLD_MINUTES', '1')
+aged_user_threshold_minutes = os.getenv('AGED_USER_THRESHOLD_MINUTES', '10080')
 
 # Comma-separated list of user statuses to filter users in Cognito
-user_status = os.getenv('USER_STATUS', 'UNCONFIRMED,RESET_REQUIRED,FORCE_CHANGE_PASSWORD')
+user_status = os.getenv('USER_STATUS', 'UNCONFIRMED')
 
 # Flag to enable or disable the deletion of users
 delete_enabled = os.getenv('DELETE_ENABLED', 'False')
