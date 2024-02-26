@@ -18,7 +18,7 @@ def write_deleted_users_to_s3(s3_client, deleted_users, bucket_name=None, s3_key
     try:
         # Proceed to write the string to a file in S3
         s3_client.put_object(Bucket=bucket_name, Key=s3_key, Body=deleted_users_str)
-        print(f"Successfully wrote deleted users to {s3_key} in bucket {bucket_name}.")
+        print("Successfully wrote deleted users to {s3_key} in bucket {bucket_name}.")
     except Exception as e:
         print(f"Failed to write deleted users to S3: {e}")
 
