@@ -21,6 +21,7 @@ format = "sdist"
 [tool.poetry.dependencies]
 python = "^3.8.1"
 boto3 = "^1.30"
+pytz = "^2024.1"
 
 [tool.poetry.scripts]
 cognito_clean = "cognito_clean.cognito_cleaner:main_handler"

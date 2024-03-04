@@ -1,3 +1,5 @@
+import logging
+
 def send_email_notification(sns_client, topic_arn, deleted_users_info):
     """
     Sends an email notification with the list of deleted users via AWS SNS.
@@ -7,12 +9,12 @@ def send_email_notification(sns_client, topic_arn, deleted_users_info):
     :param deleted_users_info: List of dictionaries containing user attributes
     """
     if not topic_arn:
-        print("Skipping SNS notification as topic has not been configured...")
+        logging.info("Skipping SNS notification as topic has not been configured...")
         return
     if not sns_client:
         raise ValueError("error: sns_client not initialised")
     if not deleted_users_info:
-        print("No users deleted, skipping SNS notification...")
+        logging.info("No users deleted, skipping SNS notification...")
         return
     
     # Format the message with all user information
@@ -29,6 +31,6 @@ def send_email_notification(sns_client, topic_arn, deleted_users_info):
             Message=message,
             Subject='Notification of Deleted Users'
         )
-        print(f"Message sent to SNS topic {topic_arn}. Message ID: {response['MessageId']}")
+        logging.info(f"Message sent to SNS topic {topic_arn}. Message ID: {response['MessageId']}")
     except Exception as e:
-        print(f"Failed to send notification due to an error: {e}")
+        logging.error(f"Failed to send notification due to an error: {e}")

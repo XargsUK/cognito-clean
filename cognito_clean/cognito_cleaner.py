@@ -2,9 +2,9 @@ import boto3
 import config
 import pytz
 from datetime import datetime
-from library.cognito_manager import process_unconfirmed_users
-from library.file_manager import write_deleted_users_to_s3
-from library.notification_service import send_email_notification
+from cognito_clean.cognito_manager import process_unconfirmed_users
+from cognito_clean.file_manager import write_deleted_users_to_s3
+from cognito_clean.notification_service import send_email_notification
 
 # Initialize the Boto3 clients with the region from the config
 cognito_client = boto3.client('cognito-idp', region_name=config.aws_region)

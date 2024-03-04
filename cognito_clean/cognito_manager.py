@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import pytz
 
+
 def list_users(cognito_client, user_pool_id, age_in_minutes, user_statuses, last_run_cache):
     """
     List users from Cognito based on specified statuses and age, adjusted by the last processed time in cache.
@@ -53,8 +54,6 @@ def list_users(cognito_client, user_pool_id, age_in_minutes, user_statuses, last
         return []
 
 
-
-
 def delete_users(cognito_client, user_pool_id, user, delete_enabled, deleted_users_cache):
     """
     Deletes a single user from the Cognito user pool if delete_enabled is true.
@@ -88,16 +87,15 @@ def delete_users(cognito_client, user_pool_id, user, delete_enabled, deleted_use
     else:
         print(f"Skipping deletion of user {username} as delete_enabled is not set to 'True'")
         return None
-    
+
+
 def process_unconfirmed_users(cognito_client, user_pool_id, age_in_minutes, user_statuses, delete_enabled, last_run_cache, deleted_users_cache):
     unconfirmed_users = list_users(cognito_client, user_pool_id, age_in_minutes, user_statuses, last_run_cache)
     deleted_usernames = []
     deleted_user_objects = []
-
     for user in unconfirmed_users:
         deleted_user = delete_users(cognito_client, user_pool_id, user, delete_enabled, deleted_users_cache)
         if deleted_user:
             deleted_usernames.append(user['Username'])
             deleted_user_objects.append(deleted_user)
-
     return deleted_usernames, deleted_user_objects
