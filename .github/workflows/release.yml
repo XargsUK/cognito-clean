@@ -15,40 +15,82 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Install dependencies with Poetry
         run: |
           poetry install
+
       - name: Bump version in pyproject.toml
         run: poetry run python .github/scripts/update_version.py pyproject.toml ${{ github.event.inputs.version }}
+
       - name: Lint with flake8
         run: |
           poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           poetry run flake8 . --exit-zero --tee --output-file=flake8-report
+
       - name: Test with pytest and coverage
         run: |
           poetry run coverage run -m pytest --junitxml=pytest-report.xml tests
           poetry run coverage xml -o coverage-pytest.xml
+
       - name: SonarQube Scan
         uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
       - name: Build with Poetry
         run: |
           poetry build
+
+      - name: Export dependencies from Poetry to requirements.txt
+        run: |
+          poetry export -f requirements.txt --output cognito_clean/requirements.txt --without-hashes
+
+      - name: Install AWS SAM CLI
+        run: |
+          pip install aws-sam-cli
+
+      - name: Build Lambda package with SAM
+        run: |
+          sam build --use-container
+
+      - name: Package Lambda function
+        run: |
+          cd .aws-sam/build
+          zip -r ../../cognito_clean_${{ github.event.inputs.version }}.zip .
+
       - name: Commit & tag version bump in Git
         uses: EndBug/add-and-commit@v9
         with:
           add: pyproject.toml
           message: "Bump version to ${{ github.event.inputs.version }}"
           tag: "v${{ github.event.inputs.version }}"
+
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@v1.4.1
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
           verbose: true
+
+      - name: Create GitHub Release and Upload Lambda Package
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          files: cognito_clean_${{ github.event.inputs.version }}.zip
+          tag_name: ${{ github.event.inputs.version }}
+          name: Release ${{ github.event.inputs.version }}
+          body: "Release ${{ github.event.inputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
