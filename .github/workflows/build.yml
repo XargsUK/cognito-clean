@@ -1,27 +1,44 @@
-name: Build
-
+name: Build on push
 on:
   push:
     branches:
+      - dev
+      - dev/*
+      - feat
+      - feat/*
+      - fix
+      - fix/*
+      - hotfix
+      - hotfix/*
+      - poetry
+  pull_request:
+    branches:
       - main
-
 
 jobs:
   build:
-    name: Build
     runs-on: ubuntu-latest
-    permissions: read-all
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - uses: sonarsource/sonarqube-scan-action@master
+          fetch-depth: 0
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Install dependencies with Poetry
+        run: |
+          poetry install
+      - name: Lint with flake8
+        run: |
+          poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          poetry run flake8 . --exit-zero --tee --output-file=flake8-report
+      - name: Test with pytest and coverage
+        run: |
+          poetry run coverage run -m pytest --junitxml=pytest-report.xml tests
+          poetry run coverage xml -o coverage-pytest.xml
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-      # If you wish to fail your job when the Quality Gate is red, uncomment the
-      # following lines. This would typically be used to fail a deployment.
-      # - uses: sonarsource/sonarqube-quality-gate-action@master
-      #   timeout-minutes: 5
-      #   env:
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

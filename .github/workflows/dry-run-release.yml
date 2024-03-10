@@ -1,0 +1,99 @@
+name: Dry-run TestPyPI release on demand
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Dry-run release version identifier
+        required: true
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  BuildTest:
+    name: "Dry run Release v${{ github.event.inputs.version }}"
+    if: ${{ github.repository_owner == 'XargsUK' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies with Poetry
+        run: poetry install
+
+      - name: Bump version in pyproject.toml
+        run: poetry run python .github/scripts/update_version.py pyproject.toml ${{ github.event.inputs.version }}
+
+      - name: Lint with flake8
+        run: |
+          poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          poetry run flake8 . --exit-zero --tee --output-file=flake8-report
+
+      - name: Test with pytest and coverage
+        run: |
+          poetry run coverage run -m pytest --junitxml=pytest-report.xml tests
+          poetry run coverage xml -o coverage-pytest.xml
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      - name: Commit & tag version bump in Git
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: "Bump version to ${{ github.event.inputs.version }}-prerelease"
+          tag: "v${{ github.event.inputs.version }}-prerelease"
+          new_branch: "prerelease/v${{ github.event.inputs.version }}"
+          tag_push: --force
+          committer_name: GitHub Actions
+          committer_email: 41898282+github-actions[bot]@users.noreply.github.com
+
+      - name: Build with Poetry
+        run: poetry build
+
+      - name: Publish package to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+          verbose: true
+
+  PullRequest:
+    name: "Create v${{ github.event.inputs.version }} pull request"
+    if: ${{ github.repository_owner == 'XargsUK' }}
+    runs-on: ubuntu-latest
+    needs: BuildTest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: prerelease/v${{ github.event.inputs.version }}
+          commit-message: "Bump version to ${{ github.event.inputs.version }}"
+          title: "prerelease v${{ github.event.inputs.version }}"
+          committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          body: "This PR includes changes for the new release `v${{ github.event.inputs.version }}`."
+          delete-branch: false
+          assignees: XargsUK
+
+      - name: Close pull request
+        uses: peter-evans/close-pull@v3
+        with:
+          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+          comment: "Closed by release of v${{ github.event.inputs.version }}"
+          delete-branch: true
