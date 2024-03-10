@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from cognito_clean.notification_service import send_email_notification
 import logging
 

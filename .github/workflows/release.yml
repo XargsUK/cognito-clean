@@ -1,13 +1,13 @@
-name: "PyPI release on demand"
+name: PyPI release on demand
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "PyPI release on demand"
+        description: PyPI release on demand
         required: true
 
 jobs:
-  dry-run-release:
+  release:
     name: "PyPI release v${{ github.event.inputs.version }}"
     if: ${{ github.repository_owner == 'XargsUK' }}
     runs-on: ubuntu-latest
@@ -43,7 +43,7 @@ jobs:
       - name: Commit & tag version bump in Git
         uses: EndBug/add-and-commit@v9
         with:
-          add: "pyproject.toml"
+          add: pyproject.toml
           message: "Bump version to ${{ github.event.inputs.version }}"
           tag: "v${{ github.event.inputs.version }}"
       - name: Publish package to PyPI

@@ -1,7 +1,8 @@
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from cognito_clean.file_manager import write_deleted_users_to_s3
-import logging, json
+import logging
+import json
 
 logging.basicConfig(level=logging.INFO)
 
