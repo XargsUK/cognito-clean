@@ -3,10 +3,10 @@ Transform: AWS::Serverless-2016-10-31
 Description: An AWS Lambda application that cleans unconfirmed users from a Cognito User Pool.
 
 Resources:
-  CognitoCleanFunction:
+  lambda:
     Type: AWS::Serverless::Function 
     Properties:
-      Handler: cognito_clean.cognito_cleaner.main_handler
+      Handler: lambda.cognito_cleaner.main_handler
       Runtime: python3.10
       CodeUri: cognito_clean/
       Description: Cleans unconfirmed users from a Cognito User Pool.

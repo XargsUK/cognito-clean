@@ -1,9 +1,9 @@
 import boto3
 import pytz
 from datetime import datetime
-from cognito_clean.cognito_manager import process_unconfirmed_users
-from cognito_clean.file_manager import write_deleted_users_to_s3
-from cognito_clean.notification_service import send_email_notification
+from cognito_manager import process_unconfirmed_users
+from file_manager import write_deleted_users_to_s3
+from notification_service import send_email_notification
 
 cognito_client = None
 s3_client = None
